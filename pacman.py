@@ -33,13 +33,37 @@ class Coin(pygame.sprite.Sprite):
 		self.rect.topleft = posX + 5, posY + 5 
 
 class Pacman(pygame.sprite.Sprite):
+	MOVE_STILL = -1
+	MOVE_LEFT = 0
+	MOVE_RIGHT = 1
+	MOVE_UP = 2
+	MOVE_DOWN = 3
+
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = load_image('pacman-open.png', -1)
 		self.pos = [posX, posY]
 		screen = pygame.display.get_surface()
+		self.move = 5 
+		self.moveDir = self.MOVE_STILL
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
+
+	def update(self):
+		self._walk()
+
+	def translate(self, newMoveDir):
+		self.moveDir = newMoveDir
+
+	def _walk(self):
+		if self.moveDir == self.MOVE_LEFT:
+			self.rect = self.rect.move((-self.move, 0))
+		elif self.moveDir == self.MOVE_RIGHT:
+			self.rect = self.rect.move((self.move, 0))
+		elif self.moveDir == self.MOVE_UP:
+			self.rect = self.rect.move((0, -self.move))
+		elif self.moveDir == self.MOVE_DOWN:
+			self.rect = self.rect.move((0, self.move))
 
 class GhostCoin(pygame.sprite.Sprite):
 	def __init__(self, posX, posY):
@@ -54,9 +78,10 @@ class Level:
 	def __init__(self, pathToLevel):
 		self.levelArray = []
 		self.levelSpriteGroup = pygame.sprite.Group()
-		self.loadLevelFromFile(pathToLevel)
+		self.pacmanSprite = pygame.sprite.Sprite()
+		self._loadLevelFromFile(pathToLevel)
 
-	def loadLevelFromFile(self, pathToLevel):
+	def _loadLevelFromFile(self, pathToLevel):
 		levelFile = open(pathToLevel, 'r')
 		x = 0
 		y = 0
@@ -71,15 +96,23 @@ class Level:
 				if char == '0':
 					self.levelSpriteGroup.add(Coin(x, y))
 				if char == 'S':
-					self.levelSpriteGroup.add(Pacman(x, y))
+					self.pacman = Pacman(x, y)
 				if char == 'K':
 					self.levelSpriteGroup.add(GhostCoin(x, y))
 	
 	def update(self):
+		self.pacman.update()
 		self.levelSpriteGroup.update()
 
 	def draw(self, surface):
 		self.levelSpriteGroup.draw(surface)
+		pacmanToDraw = pygame.sprite.RenderPlain((self.pacman))
+		pacmanToDraw.draw(surface)
+		#self.pacman.draw(surface)
+
+	def movePacman(self, moveDir):
+		self.pacman.translate(moveDir)
+
 
 def main():
 	pygame.init()
@@ -105,7 +138,18 @@ def main():
 			if event.type == pygame.QUIT:
 				pygame.display.quit()
 				return	
-		
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_UP:
+					pacmanLevel.movePacman(Pacman.MOVE_UP)
+				elif event.key == pygame.K_DOWN:
+					pacmanLevel.movePacman(Pacman.MOVE_DOWN)
+				elif event.key == pygame.K_LEFT:
+					pacmanLevel.movePacman(Pacman.MOVE_LEFT)
+				elif event.key == pygame.K_RIGHT:
+					pacmanLevel.movePacman(Pacman.MOVE_RIGHT)
+			if event.type == pygame.KEYUP:
+				pacmanLevel.movePacman(Pacman.MOVE_STILL)
+
 		pacmanLevel.update()
 
 		screen.blit(background, (0, 0))
