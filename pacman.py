@@ -33,39 +33,30 @@ class Coin(pygame.sprite.Sprite):
 		self.rect.topleft = posX + 5, posY + 5 
 
 class Pacman(pygame.sprite.Sprite):
-	MOVE_STILL = -1
-	MOVE_LEFT = 0
-	MOVE_RIGHT = 1
-	MOVE_UP = 2
-	MOVE_DOWN = 3
-
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = load_image('pacman-open.png', -1)
 		self.pos = [posX, posY]
 		screen = pygame.display.get_surface()
-		self.move = 5 
-		self.moveDir = self.MOVE_STILL
+		self.move = 3 
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 
 	def update(self):
 		self._walk()
 
-	def translate(self, newMoveDir):
-		self.moveDir = newMoveDir
+	def deltaMove(self, dx, dy):
+		self.rect.x += dx
+		self.rect.y += dy
+
+	def posMove(self, newPosX, newPosY):
+		self.rect.right = newPosX
+		self.rect.bottom = newPosY
 
 	def _walk(self):
-		if self.moveDir == self.MOVE_LEFT:
-			self.rect = self.rect.move((-self.move, 0))
-		elif self.moveDir == self.MOVE_RIGHT:
-			self.rect = self.rect.move((self.move, 0))
-		elif self.moveDir == self.MOVE_UP:
-			self.rect = self.rect.move((0, -self.move))
-		elif self.moveDir == self.MOVE_DOWN:
-			self.rect = self.rect.move((0, self.move))
+		dummy = 0
 
-class GhostCoin(pygame.sprite.Sprite):
+class GhostEater(pygame.sprite.Sprite):
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = load_image('eat-coin.png', -1)
@@ -77,7 +68,10 @@ class GhostCoin(pygame.sprite.Sprite):
 class Level:
 	def __init__(self, pathToLevel):
 		self.levelArray = []
-		self.levelSpriteGroup = pygame.sprite.Group()
+		self.levelWallGroup = pygame.sprite.Group()
+		self.levelCoinGroup = pygame.sprite.Group()
+		self.levelGhostEaterGroup = pygame.sprite.Group()
+		self.levelGhostGroup = pygame.sprite.Group()
 		self.pacmanSprite = pygame.sprite.Sprite()
 		self._loadLevelFromFile(pathToLevel)
 
@@ -92,27 +86,39 @@ class Level:
 			for char in line:
 				x = x + 26
 				if char == '1':
-					self.levelSpriteGroup.add(Block(x, y))
+					self.levelWallGroup.add(Block(x, y))
 				if char == '0':
-					self.levelSpriteGroup.add(Coin(x, y))
+					self.levelCoinGroup.add(Coin(x, y))
 				if char == 'S':
 					self.pacman = Pacman(x, y)
 				if char == 'K':
-					self.levelSpriteGroup.add(GhostCoin(x, y))
+					self.levelGhostEaterGroup.add(GhostEater(x, y))
 	
 	def update(self):
 		self.pacman.update()
-		self.levelSpriteGroup.update()
+		self.levelWallGroup.update()
+		self.levelCoinGroup.update()
+		self.levelGhostEaterGroup.update()
+		self.levelGhostGroup.update()
 
 	def draw(self, surface):
-		self.levelSpriteGroup.draw(surface)
+		self.levelWallGroup.draw(surface)
+		self.levelCoinGroup.draw(surface)
+		self.levelGhostEaterGroup.draw(surface)
+		self.levelGhostGroup.draw(surface)
 		pacmanToDraw = pygame.sprite.RenderPlain((self.pacman))
 		pacmanToDraw.draw(surface)
-		#self.pacman.draw(surface)
 
-	def movePacman(self, moveDir):
-		self.pacman.translate(moveDir)
-
+	def movePacman(self, dx, dy):
+		futurePacman = Pacman(self.pacman.pos[0], self.pacman.pos[1])
+		futurePacman.deltaMove(dx, dy)
+		collidedSprite =\
+				pygame.sprite.spritecollideany(futurePacman, self.levelWallGroup)
+		if collidedSprite is not None:		
+			self.pacman.posMove(collidedSprite.rect.top,\
+					collidedSprite.rect.left)
+		else:
+			self.pacman.deltaMove(dx, dy)
 
 def main():
 	pygame.init()
@@ -128,8 +134,6 @@ def main():
 
 	clock = pygame.time.Clock()
 	pacmanLevel = Level('PacMan/data/map.txt')
-	#sampleBlock = Block(50, 50)
-	#allSprites = pygame.sprite.RenderPlain((sampleBlock))
 
 	while 1:
 		clock.tick(60)
@@ -140,15 +144,15 @@ def main():
 				return	
 			if event.type == pygame.KEYDOWN:
 				if event.key == pygame.K_UP:
-					pacmanLevel.movePacman(Pacman.MOVE_UP)
+					pacmanLevel.movePacman(0, 25)
 				elif event.key == pygame.K_DOWN:
-					pacmanLevel.movePacman(Pacman.MOVE_DOWN)
+					pacmanLevel.movePacman(0, -25)
 				elif event.key == pygame.K_LEFT:
-					pacmanLevel.movePacman(Pacman.MOVE_LEFT)
+					pacmanLevel.movePacman(-25, 0)
 				elif event.key == pygame.K_RIGHT:
-					pacmanLevel.movePacman(Pacman.MOVE_RIGHT)
+					pacmanLevel.movePacman(25, 0)
 			if event.type == pygame.KEYUP:
-				pacmanLevel.movePacman(Pacman.MOVE_STILL)
+				pacmanLevel.movePacman(0, 0)
 
 		pacmanLevel.update()
 
