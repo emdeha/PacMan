@@ -111,16 +111,6 @@ class Ghost(pygame.sprite.Sprite):
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 		self.direction = self.MOVE_UP
-		self.posOnMap =\
-				[int(self.rect.y / 25 - 1), int(self.rect.x / 25 - 1)]
-		self.pathMap = [] 
-		self.newDir = self.MOVE_UP
-
-	def initPathMap(self, newPathMap):
-		self.pathMap = newPathMap
-		self.pathMap[self.posOnMap[0]][self.posOnMap[1]] = 'G'
-		#for line in self.pathMap:
-		#	print line
 
 	def update(self):
 		if self.direction == self.MOVE_LEFT:
@@ -135,37 +125,6 @@ class Ghost(pygame.sprite.Sprite):
 		if self.direction == self.MOVE_DOWN:
 			self.rect.y += self.speed
 			self._collideWithWalls(0, self.speed)
-
-		#if self.pathMap[self.posOnMap[0] - 1][self.posOnMap[1]] == 'P':
-		#	self.rect.y -= self.speed
-		#	self.posOnMap[0] = int(self.rect.y / 25)
-		#if self.pathMap[self.posOnMap[0]][self.posOnMap[1] + 1] == 'P':
-		#	self.rect.x += self.speed
-		#	self.posOnMap[1] = int(self.rect.x / 25 - 1)
-		#if self.pathMap[self.posOnMap[0] + 1][self.posOnMap[1]] == 'P':
-		#	self.rect.y += self.speed
-		#	self.posOnMap[0] = int(self.rect.y / 25 - 1)
-		#if self.pathMap[self.posOnMap[0]][self.posOnMap[1] - 1] == 'P':
-		#	self.rect.x -= self.speed
-		#	self.posOnMap[1] = int(self.rect.x / 25)
-			
-		#self.newDir = random.randint(self.MOVE_LEFT, self.MOVE_DOWN)
-
-		#self.posOnMap =\
-		#		[int(self.rect.y / 25), int(self.rect.x / 25 - 1)]
-
-#		self.posOnMap[0] = int(self.rect.y / 25)
-#		self.posOnMap[1] = int(self.rect.x / 25)
-
-		#if self.direction == self.MOVE_LEFT:
-		#	self.rect.x -= self.speed	
-		#if self.direction == self.MOVE_RIGHT:
-		#	self.rect.x += self.speed
-		#if self.direction == self.MOVE_UP:
-		#	self.rect.y -= self.speed
-		#if self.direction == self.MOVE_DOWN:
-		#	self.rect.y += self.speed
-		#self._collideWithWalls(self.speed, 0)
 
 	def _collideWithWalls(self, dx, dy):
 		collidedSprite =\
@@ -182,14 +141,6 @@ class Ghost(pygame.sprite.Sprite):
 				self.rect.top = collidedSprite.rect.bottom
 			random.seed()
 			self.direction = random.randint(self.MOVE_LEFT, self.MOVE_DOWN)
-			
-			#while newDirection == self.direction:
-			#	newDirection = random.randint(self.MOVE_DOWN, self.MOVE_UP)
-			#self.direction = newDirection	
-
-			#if newDirection == self.direction:
-			#	newDirection = -newDirection
-			#self.direction = newDirection	
 
 
 class GhostEater(pygame.sprite.Sprite):
@@ -214,46 +165,31 @@ class Level:
 		self.pacmanSprite = pygame.sprite.Sprite()
 		self.allCoins = 0
 		self._loadLevelFromFile(pathToLevel)
-		self._initGhostPathMap()
 
 	def _loadLevelFromFile(self, pathToLevel):
 		levelFile = open(pathToLevel, 'r')
 		x = 0
 		y = 0
 		for line in levelFile:
-			newLine = []
 			y = y + 25 
 			x = 0
-			pathLine = []
 			for char in line:
 				x = x + 25
 				if char == '1':
 					self.levelWallGroup.add(Block(x, y))
-					pathLine.append('N')
 				elif char == '0':
 					self.levelCoinGroup.add(Coin(x, y))
 					self.allCoins += 1
-					pathLine.append('P')
 				elif char == 'S':
 					self.pacman = Pacman(x, y)
-					pathLine.append('P')
 				elif char == 'K':
 					self.levelGhostEaterGroup.add(GhostEater(x, y))
-					pathLine.append('P')
 				elif char == 'G':
 					self.levelGhostGroup.add(Ghost(x, y))
 					self.levelGhostGroup.add(Ghost(x, y))
 					self.levelGhostGroup.add(Ghost(x, y))
 					self.levelGhostGroup.add(Ghost(x, y))
-					pathLine.append('N')
-				elif char == ' ':
-					pathLine.append('N')
-			self.pathMap.append(pathLine)		
 
-	def _initGhostPathMap(self):
-		for ghost in self.levelGhostGroup.sprites():
-			ghost.initPathMap(self.pathMap)
-	
 	def update(self):
 		self.pacman.update()
 		self.levelWallGroup.update()
