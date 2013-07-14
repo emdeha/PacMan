@@ -1,4 +1,5 @@
-import sys, os, pygame
+import sys, os, random, time
+import pygame
 
 def load_image(name, colorKey=None):
 	fullName = os.path.join('PacMan/data', name)
@@ -36,19 +37,12 @@ class Coin(pygame.sprite.Sprite):
 
 
 class Pacman(pygame.sprite.Sprite):
-	MOVE_STILL = 0
-	MOVE_LEFT = 1
-	MOVE_RIGHT = -1
-	MOVE_UP = 2
-	MOVE_DOWN = -2
-
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = load_image('pacman-open.png', -1)
 		self.pos = [posX, posY]
 		screen = pygame.display.get_surface()
 		self.speed = 5 
-		self.moveState = self.MOVE_STILL
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 		self.collidedSprite = None
@@ -102,6 +96,52 @@ class Pacman(pygame.sprite.Sprite):
 		dummy = 0
 
 
+class Ghost(pygame.sprite.Sprite):
+	MOVE_LEFT = 1
+	MOVE_RIGHT = -1
+	MOVE_UP = 2
+	MOVE_DOWN = -2
+
+	def __init__(self, posX, posY):
+		pygame.sprite.Sprite.__init__(self)
+		self.image, self.rect = load_image('ghost.png', -1)
+		self.pos = [posX, posY]
+		self.speed = 3
+		screen = pygame.display.get_surface()
+		self.area = screen.get_rect()
+		self.rect.topleft = posX, posY
+		self.direction = self.MOVE_UP
+		self.pathMap = [] 
+
+	def initPathMap(self, newPathMap):
+		self.pathMap = newPathMap
+		self.pathMap[self.rect.x / 25][self.rect.y / 25] = 'G'
+		for line in self.pathMap:
+			print line
+
+	def update(self):
+		if self.direction == self.MOVE_LEFT:
+			self.rect.x -= self.speed	
+		if self.direction == self.MOVE_RIGHT:
+			self.rect.x += self.speed
+		if self.direction == self.MOVE_UP:
+			self.rect.y -= self.speed
+		if self.direction == self.MOVE_DOWN:
+			self.rect.y += self.speed
+		self._collideWithWalls(self.speed, 0)
+
+	def _collideWithWalls(self, dx, dy):
+		collidedSprite =\
+				pygame.sprite.spritecollideany(self,\
+						pacmanLevel.levelWallGroup)
+		if collidedSprite is not None:
+			random.seed()
+			newDirection = random.randint(self.MOVE_DOWN, self.MOVE_UP)
+			if newDirection == self.direction:
+				newDirection = -newDirection
+			self.direction = newDirection	
+
+
 class GhostEater(pygame.sprite.Sprite):
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
@@ -114,7 +154,7 @@ class GhostEater(pygame.sprite.Sprite):
 
 class Level:
 	def __init__(self):
-		self.levelArray = []
+		self.pathMap = []
 		
 	def postInit(self, pathToLevel):
 		self.levelWallGroup = pygame.sprite.Group()
@@ -124,6 +164,7 @@ class Level:
 		self.pacmanSprite = pygame.sprite.Sprite()
 		self.allCoins = 0
 		self._loadLevelFromFile(pathToLevel)
+		self._initGhostPathMap()
 
 	def _loadLevelFromFile(self, pathToLevel):
 		levelFile = open(pathToLevel, 'r')
@@ -131,19 +172,33 @@ class Level:
 		y = 0
 		for line in levelFile:
 			newLine = []
-			y = y + 27 
+			y = y + 25 
 			x = 0
+			pathLine = []
 			for char in line:
-				x = x + 26
+				x = x + 25
 				if char == '1':
 					self.levelWallGroup.add(Block(x, y))
-				if char == '0':
+					pathLine.append('N')
+				elif char == '0':
 					self.levelCoinGroup.add(Coin(x, y))
 					self.allCoins += 1
-				if char == 'S':
+					pathLine.append('P')
+				elif char == 'S':
 					self.pacman = Pacman(x, y)
-				if char == 'K':
+					pathLine.append('N')
+				elif char == 'K':
 					self.levelGhostEaterGroup.add(GhostEater(x, y))
+					pathLine.append('N')
+				elif char == 'G':
+					self.levelGhostGroup.add(Ghost(x, y))
+					pathLine.append('N')
+				else: pathLine.append('N')	
+			self.pathMap.append(pathLine)		
+
+	def _initGhostPathMap(self):
+		for ghost in self.levelGhostGroup.sprites():
+			ghost.initPathMap(self.pathMap)
 	
 	def update(self):
 		self.pacman.update()
