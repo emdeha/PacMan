@@ -45,10 +45,11 @@ class Pacman(pygame.sprite.Sprite):
 		self.speed = 5 
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
-		self.collidedSprite = None
 		self.score = 0
+		self.isEating = 0
 
 	def update(self):
+		self._collideWithGhosts()
 		if self.score >= pacmanLevel.allCoins:
 			print 'won!!!'
 
@@ -65,9 +66,7 @@ class Pacman(pygame.sprite.Sprite):
 		self._collideWithWalls(dx, dy)
 		self._collideWithCoins()
 		self._collideWithGhostEaters()
-		self._collideWithGhosts()
 		
-
 	def _collideWithWalls(self, dx, dy):
 		collidedSprite =\
 				pygame.sprite.spritecollideany(self,\
@@ -91,15 +90,24 @@ class Pacman(pygame.sprite.Sprite):
 			self.score = self.score + 1
 		
 	def _collideWithGhostEaters(self):
-		dummy = 0
+		collidedSprite =\
+				pygame.sprite.spritecollideany(self,\
+						pacmanLevel.levelGhostEaterGroup)
+		if collidedSprite is not None:		
+			#self.isEating = 1
+			for ghost in pacmanLevel.levelGhostGroup.sprites():
+				ghost.isEaten = 1
+			collidedSprite.kill()
 	
 	def _collideWithGhosts(self):
 		collidedSprite =\
 				pygame.sprite.spritecollideany(self,\
 						pacmanLevel.levelGhostGroup)
 		if collidedSprite is not None:
-			self.kill()
-			#print 'lost!!!'
+			if collidedSprite.isEaten == 0:
+				self.kill()
+			else:
+				collidedSprite.kill()
 
 
 class Ghost(pygame.sprite.Sprite):
@@ -117,6 +125,7 @@ class Ghost(pygame.sprite.Sprite):
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 		self.direction = self.MOVE_UP
+		self.isEaten = 0
 
 	def update(self):
 		if self.direction == self.MOVE_LEFT:
@@ -169,6 +178,8 @@ class Level:
 		self.levelGhostEaterGroup = pygame.sprite.Group()
 		self.levelGhostGroup = pygame.sprite.Group()
 		self.pacmanSprite = pygame.sprite.Group()
+		self.startPosX = 0
+		self.startPosY = 0
 		self.allCoins = 0
 		self._loadLevelFromFile(pathToLevel)
 
@@ -195,6 +206,8 @@ class Level:
 					self.levelGhostGroup.add(Ghost(x, y))
 					self.levelGhostGroup.add(Ghost(x, y))
 					self.levelGhostGroup.add(Ghost(x, y))
+					self.startPosX = x
+					self.startPosY = y
 
 	def update(self):
 		self.pacmanSprite.update()
@@ -202,6 +215,7 @@ class Level:
 		self.levelCoinGroup.update()
 		self.levelGhostEaterGroup.update()
 		self.levelGhostGroup.update()
+		self._respawnGhosts()
 
 	def draw(self, surface):
 		self.levelWallGroup.draw(surface)
@@ -209,6 +223,11 @@ class Level:
 		self.levelGhostEaterGroup.draw(surface)
 		self.levelGhostGroup.draw(surface)
 		self.pacmanSprite.draw(surface)
+
+	def _respawnGhosts(self):
+		if len(self.levelGhostGroup.sprites()) < 4:
+			self.levelGhostGroup.\
+					add(Ghost(self.startPosX, self.startPosY))
 
 
 pacmanLevel = Level()
