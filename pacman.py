@@ -46,7 +46,6 @@ class Pacman(pygame.sprite.Sprite):
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 		self.score = 0
-		self.isEating = 0
 
 	def update(self):
 		self._collideWithGhosts()
@@ -94,7 +93,6 @@ class Pacman(pygame.sprite.Sprite):
 				pygame.sprite.spritecollideany(self,\
 						pacmanLevel.levelGhostEaterGroup)
 		if collidedSprite is not None:		
-			#self.isEating = 1
 			for ghost in pacmanLevel.levelGhostGroup.sprites():
 				ghost.isEaten = 1
 			collidedSprite.kill()
