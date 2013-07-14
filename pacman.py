@@ -30,31 +30,55 @@ class Coin(pygame.sprite.Sprite):
 		self.pos = [posX, posY]
 		screen = pygame.display.get_surface()
 		self.area = screen.get_rect()
-		self.rect.topleft = posX + 5, posY + 5 
+		self.rect.topleft = posX, posY 
 
 class Pacman(pygame.sprite.Sprite):
+	MOVE_STILL = 0
+	MOVE_LEFT = 1
+	MOVE_RIGHT = -1
+	MOVE_UP = 2
+	MOVE_DOWN = -2
+
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
 		self.image, self.rect = load_image('pacman-open.png', -1)
 		self.pos = [posX, posY]
 		screen = pygame.display.get_surface()
-		self.move = 3 
+		self.speed = 5 
+		self.moveState = self.MOVE_STILL
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
+		self.collidedSprite = None
 
 	def update(self):
 		self._walk()
+
+	def move(self, newMoveState, newCollidedSprite=None):
+		self.moveState = newMoveState
+		self.collidedSprite = newCollidedSprite
 
 	def deltaMove(self, dx, dy):
 		self.rect.x += dx
 		self.rect.y += dy
 
-	def posMove(self, newPosX, newPosY):
-		self.rect.right = newPosX
-		self.rect.bottom = newPosY
-
 	def _walk(self):
-		dummy = 0
+		if self.moveState == self.MOVE_LEFT:
+			if self.collidedSprite is not None:
+				self.rect.left = self.collidedSprite.rect.right
+			else: self.rect = self.rect.move((-self.speed, 0))
+		elif self.moveState == self.MOVE_RIGHT:
+			if self.collidedSprite is not None:
+				self.rect.right = self.collidedSprite.rect.left
+			else: self.rect = self.rect.move((self.speed, 0))
+		elif self.moveState == self.MOVE_UP:
+			if self.collidedSprite is not None:
+				self.rect.top = self.collidedSprite.rect.bottom
+			else: self.rect = self.rect.move((0, -self.speed))
+		elif self.moveState == self.MOVE_DOWN:
+			if self.collidedSprite is not None:
+				self.rect.bottom = self.collidedSprite.rect.top
+			else: self.rect = self.rect.move((0, self.speed))	
+		self.moveState = self.MOVE_STILL	
 
 class GhostEater(pygame.sprite.Sprite):
 	def __init__(self, posX, posY):
@@ -109,18 +133,16 @@ class Level:
 		pacmanToDraw = pygame.sprite.RenderPlain((self.pacman))
 		pacmanToDraw.draw(surface)
 
-	def movePacman(self, dx, dy):
+	def movePacman(self, newMoveState):
 		futurePacman = Pacman(self.pacman.pos[0], self.pacman.pos[1])
-		futurePacman.deltaMove(dx, dy)
+		futurePacman.move(newMoveState)
+		futurePacman._walk()
 		collidedSprite =\
-				pygame.sprite.spritecollideany(futurePacman, self.levelWallGroup)
-		if collidedSprite is not None:		
-			self.pacman.posMove(collidedSprite.rect.top,\
-					collidedSprite.rect.left)
-		else:
-			self.pacman.deltaMove(dx, dy)
+				pygame.sprite.spritecollideany(futurePacman,\
+						self.levelWallGroup)
+		self.pacman.move(newMoveState, collidedSprite)
 
-def main():
+def start():
 	pygame.init()
 	screen = pygame.display.set_mode((500, 500))
 	pygame.display.set_caption('PacMan')
@@ -144,15 +166,19 @@ def main():
 				return	
 			if event.type == pygame.KEYDOWN:
 				if event.key == pygame.K_UP:
-					pacmanLevel.movePacman(0, 25)
+					pacmanLevel.movePacman(Pacman.MOVE_UP)
+					#pacmanLevel.movePacman(0, 25)
 				elif event.key == pygame.K_DOWN:
-					pacmanLevel.movePacman(0, -25)
+					pacmanLevel.movePacman(Pacman.MOVE_DOWN)
+					#pacmanLevel.movePacman(0, -25)
 				elif event.key == pygame.K_LEFT:
-					pacmanLevel.movePacman(-25, 0)
+					pacmanLevel.movePacman(Pacman.MOVE_LEFT)
+					#pacmanLevel.movePacman(-25, 0)
 				elif event.key == pygame.K_RIGHT:
-					pacmanLevel.movePacman(25, 0)
+					pacmanLevel.movePacman(Pacman.MOVE_RIGHT)
+					#pacmanLevel.movePacman(25, 0)
 			if event.type == pygame.KEYUP:
-				pacmanLevel.movePacman(0, 0)
+				pacmanLevel.movePacman(Pacman.MOVE_STILL)
 
 		pacmanLevel.update()
 
