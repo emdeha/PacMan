@@ -1,5 +1,6 @@
 import sys, os, random, time
 import pygame
+from spriteAnim import SpriteStripAnim
 
 def load_image(name, colorKey=None):
 	fullName = os.path.join('PacMan/data', name)
@@ -39,7 +40,12 @@ class Coin(pygame.sprite.Sprite):
 class Pacman(pygame.sprite.Sprite):
 	def __init__(self, posX, posY):
 		pygame.sprite.Sprite.__init__(self)
-		self.image, self.rect = load_image('pacman-open.png', -1)
+		self.anim =\
+				SpriteStripAnim('PacMan/data/pacman.png', (0, 0, 20, 20),
+						2, -1, True, 5)
+		self.anim.iter()
+		self.image = self.anim.next()	
+		self.rect = self.image.get_rect()
 		self.pos = [posX, posY]
 		screen = pygame.display.get_surface()
 		self.speed = 5 
@@ -48,6 +54,8 @@ class Pacman(pygame.sprite.Sprite):
 		self.score = 0
 
 	def update(self):
+		#self.anim.iter()
+		self.image = self.anim.next()
 		self._collideWithGhosts()
 		if self.score >= pacmanLevel.allCoins:
 			print 'won!!!'
