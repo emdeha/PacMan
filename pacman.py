@@ -49,7 +49,6 @@ class Pacman(pygame.sprite.Sprite):
 		self.score = 0
 
 	def update(self):
-		self._walk()
 		if self.score >= pacmanLevel.allCoins:
 			print 'won!!!'
 
@@ -66,9 +65,8 @@ class Pacman(pygame.sprite.Sprite):
 		self._collideWithWalls(dx, dy)
 		self._collideWithCoins()
 		self._collideWithGhostEaters()
+		self._collideWithGhosts()
 		
-	def _walk(self):
-		dummy = 0
 
 	def _collideWithWalls(self, dx, dy):
 		collidedSprite =\
@@ -94,6 +92,14 @@ class Pacman(pygame.sprite.Sprite):
 		
 	def _collideWithGhostEaters(self):
 		dummy = 0
+	
+	def _collideWithGhosts(self):
+		collidedSprite =\
+				pygame.sprite.spritecollideany(self,\
+						pacmanLevel.levelGhostGroup)
+		if collidedSprite is not None:
+			self.kill()
+			#print 'lost!!!'
 
 
 class Ghost(pygame.sprite.Sprite):
@@ -162,7 +168,7 @@ class Level:
 		self.levelCoinGroup = pygame.sprite.Group()
 		self.levelGhostEaterGroup = pygame.sprite.Group()
 		self.levelGhostGroup = pygame.sprite.Group()
-		self.pacmanSprite = pygame.sprite.Sprite()
+		self.pacmanSprite = pygame.sprite.Group()
 		self.allCoins = 0
 		self._loadLevelFromFile(pathToLevel)
 
@@ -181,7 +187,7 @@ class Level:
 					self.levelCoinGroup.add(Coin(x, y))
 					self.allCoins += 1
 				elif char == 'S':
-					self.pacman = Pacman(x, y)
+					self.pacmanSprite.add(Pacman(x, y))
 				elif char == 'K':
 					self.levelGhostEaterGroup.add(GhostEater(x, y))
 				elif char == 'G':
@@ -191,7 +197,7 @@ class Level:
 					self.levelGhostGroup.add(Ghost(x, y))
 
 	def update(self):
-		self.pacman.update()
+		self.pacmanSprite.update()
 		self.levelWallGroup.update()
 		self.levelCoinGroup.update()
 		self.levelGhostEaterGroup.update()
@@ -202,8 +208,7 @@ class Level:
 		self.levelCoinGroup.draw(surface)
 		self.levelGhostEaterGroup.draw(surface)
 		self.levelGhostGroup.draw(surface)
-		pacmanToDraw = pygame.sprite.RenderPlain((self.pacman))
-		pacmanToDraw.draw(surface)
+		self.pacmanSprite.draw(surface)
 
 
 pacmanLevel = Level()
@@ -231,15 +236,16 @@ def start():
 				pygame.display.quit()
 				return	
 
-		key = pygame.key.get_pressed()
-		if key[pygame.K_LEFT]:
-			pacmanLevel.pacman.move(-2, 0)
-		if key[pygame.K_RIGHT]:
-			pacmanLevel.pacman.move(2, 0)
-		if key[pygame.K_UP]:
-			pacmanLevel.pacman.move(0, -2)
-		if key[pygame.K_DOWN]:
-			pacmanLevel.pacman.move(0, 2)
+		if bool(pacmanLevel.pacmanSprite) == 1:
+			key = pygame.key.get_pressed()
+			if key[pygame.K_LEFT]:
+				pacmanLevel.pacmanSprite.sprites()[0].move(-2, 0)
+			if key[pygame.K_RIGHT]:
+				pacmanLevel.pacmanSprite.sprites()[0].move(2, 0)
+			if key[pygame.K_UP]:
+				pacmanLevel.pacmanSprite.sprites()[0].move(0, -2)
+			if key[pygame.K_DOWN]:
+				pacmanLevel.pacmanSprite.sprites()[0].move(0, 2)
 
 		pacmanLevel.update()
 
