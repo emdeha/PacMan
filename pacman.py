@@ -42,7 +42,7 @@ class Pacman(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self)
 		self.anim =\
 				SpriteStripAnim('PacMan/data/pacman.png', (0, 0, 20, 20),
-						2, -1, True, 5)
+						2, -1, True, 100)
 		self.anim.iter()
 		self.image = self.anim.next()	
 		self.rect = self.image.get_rect()
@@ -103,6 +103,7 @@ class Pacman(pygame.sprite.Sprite):
 		if collidedSprite is not None:		
 			for ghost in pacmanLevel.levelGhostGroup.sprites():
 				ghost.isEaten = 1
+				ghost.eatenClock = time.time()
 			collidedSprite.kill()
 	
 	def _collideWithGhosts(self):
@@ -122,18 +123,53 @@ class Ghost(pygame.sprite.Sprite):
 	MOVE_UP = 3
 	MOVE_DOWN = 4
 
-	def __init__(self, posX, posY):
+	def __init__(self, posX, posY,\
+			     regularSpritesheet, eatenSpritesheet):
 		pygame.sprite.Sprite.__init__(self)
-		self.image, self.rect = load_image('ghost.png', -1)
+		self.regSpritesheet = regularSpritesheet
+		self.eatSpritesheet = eatenSpritesheet
+		self.anim =\
+				SpriteStripAnim(regularSpritesheet, (0, 0, 20, 20),
+						5, -1, True, 20)
+		self.anim.iter()
+		self.image = self.anim.next()	
+		self.rect = self.image.get_rect()
 		self.pos = [posX, posY]
-		self.speed = 3
+		self.speed = 1
 		screen = pygame.display.get_surface()
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 		self.direction = self.MOVE_UP
 		self.isEaten = 0
+		self.isAte = 0
+		self.isSwitched = 0
+		self.eatenClock = 0
+		self.respawnClock = 0
 
 	def update(self):
+		if self.isAte == 1:
+			self.respawnClock = time.time()
+			self.isAte = 0
+		if (time.time() - self.respawnClock) > 3:
+			self.anim =\
+					SpriteStripAnim(self.ateSpritesheet, (0, 0, 20, 20),
+							5, -1, True, 20)
+		if (time.time() - self.eatenClock) > 3 and self.isEaten == 1:
+			self.isEaten = 0
+			self.isSwitched = 0
+		if self.isEaten == 1 and self.isSwitched == 0:
+			self.anim =\
+					SpriteStripAnim(self.eatSpritesheet, (0, 0, 20, 20),
+							5, -1, True, 20)
+			self.anim.iter()		
+			self.isSwitched = 1
+		elif self.isSwitched == 0:
+			self.anim =\
+					SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
+							5, -1, True, 20)
+			self.anim.iter()		
+			self.isSwitched = 0
+		self.image = self.anim.next()
 		if self.direction == self.MOVE_LEFT:
 			self.rect.x -= self.speed
 			self._collideWithWalls(-self.speed, 0)
@@ -208,10 +244,18 @@ class Level:
 				elif char == 'K':
 					self.levelGhostEaterGroup.add(GhostEater(x, y))
 				elif char == 'G':
-					self.levelGhostGroup.add(Ghost(x, y))
-					self.levelGhostGroup.add(Ghost(x, y))
-					self.levelGhostGroup.add(Ghost(x, y))
-					self.levelGhostGroup.add(Ghost(x, y))
+					self.levelGhostGroup.add(Ghost(x, y,\
+						'PacMan/data/red-ghost.png', 
+						'PacMan/data/eat-ghost.png'))
+					self.levelGhostGroup.add(Ghost(x, y,\
+						'PacMan/data/orange-ghost.png', 
+						'PacMan/data/eat-ghost.png'))
+					self.levelGhostGroup.add(Ghost(x, y,\
+						'PacMan/data/blue-ghost.png',
+						'PacMan/data/eat-ghost.png'))
+					self.levelGhostGroup.add(Ghost(x, y,\
+						'PacMan/data/pink-ghost.png',
+						'PacMan/data/eat-ghost.png'))
 					self.startPosX = x
 					self.startPosY = y
 
@@ -233,7 +277,9 @@ class Level:
 	def _respawnGhosts(self):
 		if len(self.levelGhostGroup.sprites()) < 4:
 			self.levelGhostGroup.\
-					add(Ghost(self.startPosX, self.startPosY))
+					add(Ghost(self.startPosX, self.startPosY,\
+							 'PacMan/data/red-ghost.png',
+							 'PacMan/data/eat-ghost.png'))
 
 
 pacmanLevel = Level()
