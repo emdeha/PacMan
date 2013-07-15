@@ -1,0 +1,15 @@
+1111111111111111
+1              1
+1              1
+1K K  KK  K  K 1
+1K K K  K K  K 1
+1 K  K  K K  K 1
+1 K   KK   KK  1
+1              1
+1              1
+1K   KK   KK KK1
+1K  K  K K   K 1
+1K  K  K KKK KK1
+1K  K  K   K K 1
+1KK  KK  KK  KK1
+1111111111111111

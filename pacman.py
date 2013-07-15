@@ -55,16 +55,17 @@ class Pacman(pygame.sprite.Sprite):
 		self.speed = newSpeed 
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
-		self.score = 0
 		self.orientation = self.ORIENT_RIGHT
 		self.isStartedMoving = False
+		self.isWin = False
+		self.isLose = False
 
 	def update(self):
 		self.image = self.anim.next()
 		self._updateOrientation()
 		self._collideWithGhosts()
-		if self.score >= pacmanLevel.allCoins:
-			print 'won!!!'
+		if bool(pacmanLevel.levelCoinGroup) == False:
+			self.isWin = True
 
 	def move(self, dx, dy):
 		self.isStartedMoving = True
@@ -128,7 +129,6 @@ class Pacman(pygame.sprite.Sprite):
 						pacmanLevel.levelCoinGroup)
 		if collidedSprite is not None:
 			collidedSprite.kill()
-			self.score = self.score + 1
 		
 	def _collideWithGhostEaters(self):
 		collidedSprite =\
@@ -146,7 +146,7 @@ class Pacman(pygame.sprite.Sprite):
 		if collidedSprite is not None:
 			if collidedSprite.isToBeEaten == False and\
 					collidedSprite.isEaten == False:
-				self.kill()
+				self.isLose = True
 			else:
 				collidedSprite.eat()
 
@@ -181,8 +181,9 @@ class Ghost(pygame.sprite.Sprite):
 		self.isStartedMoving = False
 
 	def update(self):
-		if pacmanLevel.pacmanSprite.sprites()[0].isStartedMoving == True:
-			self.isStartedMoving = True
+		if bool(pacmanLevel.pacmanSprite) == True:
+			if pacmanLevel.pacmanSprite.sprites()[0].isStartedMoving == True:
+				self.isStartedMoving = True
 		if self.isStartedMoving == True:
 			if (time.time() - self.toBeEatenClock) > 3 and self.isToBeEaten == True:
 				self.anim =\
@@ -256,8 +257,9 @@ class GhostEater(pygame.sprite.Sprite):
 
 
 class Level:
-	def __init__(self):
+	def __init__(self, newBlockSize):
 		self.allCoins = 0
+		self.blockSize = newBlockSize
 
 	def postInit(self, pathToLevel):
 		self.levelWallGroup = pygame.sprite.Group()
@@ -269,13 +271,13 @@ class Level:
 
 	def _loadLevelFromFile(self, pathToLevel):
 		levelFile = open(pathToLevel, 'r')
-		x = 0
-		y = 0
+		x = -self.blockSize
+		y = -self.blockSize
 		for line in levelFile:
-			y = y + 25 
-			x = 0
+			y = y + self.blockSize 
+			x = -self.blockSize
 			for char in line:
-				x = x + 25
+				x = x + self.blockSize 
 				if char == '1':
 					self.levelWallGroup.add(Block(x, y,
 						'PacMan/data/block.png'))
@@ -322,11 +324,15 @@ class Level:
 		self.pacmanSprite.draw(surface)
 
 
-pacmanLevel = Level()
+blockSize = 25
+pacmanLevel = Level(blockSize)
+
 
 def start():
 	pygame.init()
-	screen = pygame.display.set_mode((500, 500))
+	screenWidth = 400
+	screenHeight = 375
+	screen = pygame.display.set_mode((screenWidth, screenHeight))
 	pygame.display.set_caption('PacMan')
 	
 	background = pygame.Surface(screen.get_size())
@@ -347,7 +353,7 @@ def start():
 				pygame.display.quit()
 				return	
 
-		if bool(pacmanLevel.pacmanSprite) == 1:
+		if bool(pacmanLevel.pacmanSprite) == True:
 			key = pygame.key.get_pressed()
 			if key[pygame.K_LEFT]:
 				pacmanLevel.pacmanSprite.sprites()[0].move(-1, 0)
@@ -358,10 +364,19 @@ def start():
 			if key[pygame.K_DOWN]:
 				pacmanLevel.pacmanSprite.sprites()[0].move(0, 1)
 
+		
 		pacmanLevel.update()
-
+	
 		screen.blit(background, (0, 0))
 		pacmanLevel.draw(screen)
+		
+		if bool(pacmanLevel.pacmanSprite) == True:
+			if pacmanLevel.pacmanSprite.sprites()[0].isWin == True:
+				pacmanLevel.postInit('PacMan/data/win.txt')
+			elif pacmanLevel.pacmanSprite.sprites()[0].isLose == True:
+				pacmanLevel.pacmanSprite.sprites()[0].kill()
+				pacmanLevel.postInit('PacMan/data/lose.txt')
+				
 		pygame.display.flip()
 
 
