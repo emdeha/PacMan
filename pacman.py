@@ -57,6 +57,7 @@ class Pacman(pygame.sprite.Sprite):
 		self.rect.topleft = posX, posY
 		self.score = 0
 		self.orientation = self.ORIENT_RIGHT
+		self.isStartedMoving = False
 
 	def update(self):
 		self.image = self.anim.next()
@@ -66,6 +67,7 @@ class Pacman(pygame.sprite.Sprite):
 			print 'won!!!'
 
 	def move(self, dx, dy):
+		self.isStartedMoving = True
 		if dx == 1:
 			dx = self.speed
 		if dx == -1:
@@ -176,35 +178,39 @@ class Ghost(pygame.sprite.Sprite):
 		self.isToBeEaten = False
 		self.eatenClock = 0
 		self.toBeEatenClock = 0
+		self.isStartedMoving = False
 
 	def update(self):
-		if (time.time() - self.toBeEatenClock) > 3 and self.isToBeEaten == True:
-			self.anim =\
-					SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
-							5, -1, True, 20)
-			self.isToBeEaten = False		
-			self.toBeEatenClock = 0
-		
-		if (time.time() - self.eatenClock) > 3 and self.isEaten == True:
-			self.anim =\
-					SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
-							5, -1, True, 20)
-			self.isEaten = False
-			self.eatenClock = 0
+		if pacmanLevel.pacmanSprite.sprites()[0].isStartedMoving == True:
+			self.isStartedMoving = True
+		if self.isStartedMoving == True:
+			if (time.time() - self.toBeEatenClock) > 3 and self.isToBeEaten == True:
+				self.anim =\
+						SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
+								5, -1, True, 20)
+				self.isToBeEaten = False		
+				self.toBeEatenClock = 0
+			
+			if (time.time() - self.eatenClock) > 3 and self.isEaten == True:
+				self.anim =\
+						SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
+								5, -1, True, 20)
+				self.isEaten = False
+				self.eatenClock = 0
 
-		self.image = self.anim.next()
-		if self.direction == self.MOVE_LEFT:
-			self.rect.x -= self.speed
-			self._collideWithWalls(-self.speed, 0)
-		if self.direction == self.MOVE_RIGHT:
-			self.rect.x += self.speed
-			self._collideWithWalls(self.speed, 0)
-		if self.direction == self.MOVE_UP:
-			self.rect.y -= self.speed
-			self._collideWithWalls(0, -self.speed)
-		if self.direction == self.MOVE_DOWN:
-			self.rect.y += self.speed
-			self._collideWithWalls(0, self.speed)
+			self.image = self.anim.next()
+			if self.direction == self.MOVE_LEFT:
+				self.rect.x -= self.speed
+				self._collideWithWalls(-self.speed, 0)
+			if self.direction == self.MOVE_RIGHT:
+				self.rect.x += self.speed
+				self._collideWithWalls(self.speed, 0)
+			if self.direction == self.MOVE_UP:
+				self.rect.y -= self.speed
+				self._collideWithWalls(0, -self.speed)
+			if self.direction == self.MOVE_DOWN:
+				self.rect.y += self.speed
+				self._collideWithWalls(0, self.speed)
 
 	def toBeEaten(self):
 		if self.isEaten == False:
