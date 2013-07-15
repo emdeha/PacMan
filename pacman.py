@@ -134,8 +134,7 @@ class Pacman(pygame.sprite.Sprite):
 						pacmanLevel.levelGhostEaterGroup)
 		if collidedSprite is not None:		
 			for ghost in pacmanLevel.levelGhostGroup.sprites():
-				ghost.isEaten = 1
-				ghost.eatenClock = time.time()
+				ghost.toBeEaten()
 			collidedSprite.kill()
 	
 	def _collideWithGhosts(self):
@@ -143,10 +142,11 @@ class Pacman(pygame.sprite.Sprite):
 				pygame.sprite.spritecollideany(self,\
 						pacmanLevel.levelGhostGroup)
 		if collidedSprite is not None:
-			if collidedSprite.isEaten == 0:
+			if collidedSprite.isToBeEaten == False and\
+					collidedSprite.isEaten == False:
 				self.kill()
 			else:
-				collidedSprite.isAte = 1
+				collidedSprite.eat()
 
 
 class Ghost(pygame.sprite.Sprite):
@@ -155,7 +155,7 @@ class Ghost(pygame.sprite.Sprite):
 	MOVE_UP = 3
 	MOVE_DOWN = 4
 
-	def __init__(self, posX, posY,\
+	def __init__(self, posX, posY, newSpeed,\
 			     regularSpritesheet, eatenSpritesheet, eyeSpritesheet):
 		pygame.sprite.Sprite.__init__(self)
 		self.regSpritesheet = regularSpritesheet
@@ -167,45 +167,31 @@ class Ghost(pygame.sprite.Sprite):
 		self.anim.iter()
 		self.image = self.anim.next()	
 		self.rect = self.image.get_rect()
-		self.pos = [posX, posY]
-		self.speed = 1
+		self.speed = newSpeed
 		screen = pygame.display.get_surface()
 		self.area = screen.get_rect()
 		self.rect.topleft = posX, posY
 		self.direction = self.MOVE_UP
-		self.isEaten = 0
-		self.isAte = 0
-		self.isSwitched = 0
+		self.isEaten = False 
+		self.isToBeEaten = False
 		self.eatenClock = 0
-		self.respawnClock = 0
+		self.toBeEatenClock = 0
 
 	def update(self):
-		if self.isAte == 1:
-			self.respawnClock = time.time()
-			self.anim =\
-					SpriteStripAnim(self.eyeSpritesheet, (0, 0, 20, 20),
-							5, -1, True, 20)
-		if (time.time() - self.respawnClock) > 3 and self.isAte == 1:
+		if (time.time() - self.toBeEatenClock) > 3 and self.isToBeEaten == True:
 			self.anim =\
 					SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
 							5, -1, True, 20)
-			self.respawnClock = 0		
-			self.isAte = 0
-		if (time.time() - self.eatenClock) > 3 and self.isEaten == 1:
-			self.isEaten = 0
-			self.isSwitched = 0
-		if self.isEaten == 1 and self.isSwitched == 0:
-			self.anim =\
-					SpriteStripAnim(self.eatSpritesheet, (0, 0, 20, 20),
-							5, -1, True, 20)
-			self.anim.iter()		
-			self.isSwitched = 1
-		elif self.isSwitched == 0:
+			self.isToBeEaten = False		
+			self.toBeEatenClock = 0
+		
+		if (time.time() - self.eatenClock) > 3 and self.isEaten == True:
 			self.anim =\
 					SpriteStripAnim(self.regSpritesheet, (0, 0, 20, 20),
 							5, -1, True, 20)
-			self.anim.iter()		
-			self.isSwitched = 0
+			self.isEaten = False
+			self.eatenClock = 0
+
 		self.image = self.anim.next()
 		if self.direction == self.MOVE_LEFT:
 			self.rect.x -= self.speed
@@ -219,6 +205,22 @@ class Ghost(pygame.sprite.Sprite):
 		if self.direction == self.MOVE_DOWN:
 			self.rect.y += self.speed
 			self._collideWithWalls(0, self.speed)
+
+	def toBeEaten(self):
+		if self.isEaten == False:
+			self.isToBeEaten = True
+			self.anim =\
+					SpriteStripAnim(self.eatSpritesheet, (0, 0, 20, 20),
+							5, -1, True, 20)
+			self.toBeEatenClock = time.time()		
+
+	def eat(self):
+		self.isEaten = True
+		self.isToBeEaten = False
+		self.anim =\
+				SpriteStripAnim(self.eyeSpritesheet, (0, 0, 20, 20),
+						5, -1, True, 20)
+		self.eatenClock = time.time()		
 
 	def _collideWithWalls(self, dx, dy):
 		collidedSprite =\
@@ -282,19 +284,19 @@ class Level:
 					self.levelGhostEaterGroup.add(GhostEater(x, y,
 						'PacMan/data/eat-coin.png'))
 				elif char == 'G':
-					self.levelGhostGroup.add(Ghost(x, y,\
+					self.levelGhostGroup.add(Ghost(x, y, 1,\
 						'PacMan/data/red-ghost.png', 
 						'PacMan/data/eat-ghost.png',
 						'PacMan/data/eye-ghost.png'))
-					self.levelGhostGroup.add(Ghost(x, y,\
+					self.levelGhostGroup.add(Ghost(x, y, 1,\
 						'PacMan/data/orange-ghost.png', 
 						'PacMan/data/eat-ghost.png',
 						'PacMan/data/eye-ghost.png'))
-					self.levelGhostGroup.add(Ghost(x, y,\
+					self.levelGhostGroup.add(Ghost(x, y, 1,\
 						'PacMan/data/blue-ghost.png',
 						'PacMan/data/eat-ghost.png',
 						'PacMan/data/eye-ghost.png'))
-					self.levelGhostGroup.add(Ghost(x, y,\
+					self.levelGhostGroup.add(Ghost(x, y, 1,\
 						'PacMan/data/pink-ghost.png',
 						'PacMan/data/eat-ghost.png',
 						'PacMan/data/eye-ghost.png'))
