@@ -280,34 +280,34 @@ class Level:
 				x = x + self.blockSize 
 				if char == '1':
 					self.levelWallGroup.add(Block(x, y,
-						'PacMan/data/block.png'))
+						'data/block.png'))
 				elif char == '0':
 					self.levelCoinGroup.add(Coin(x, y,
-						'PacMan/data/coin.png'))
+						'data/coin.png'))
 					self.allCoins += 1
 				elif char == 'S':
 					self.pacmanSprite.add(Pacman(x, y, 2,
-						'PacMan/data/pacman.png'))
+						'data/pacman.png'))
 				elif char == 'K':
 					self.levelGhostEaterGroup.add(GhostEater(x, y,
-						'PacMan/data/eat-coin.png'))
+						'data/eat-coin.png'))
 				elif char == 'G':
 					self.levelGhostGroup.add(Ghost(x, y, 1,\
-						'PacMan/data/red-ghost.png', 
-						'PacMan/data/eat-ghost.png',
-						'PacMan/data/eye-ghost.png'))
+						'data/red-ghost.png', 
+						'data/eat-ghost.png',
+						'data/eye-ghost.png'))
 					self.levelGhostGroup.add(Ghost(x, y, 1,\
-						'PacMan/data/orange-ghost.png', 
-						'PacMan/data/eat-ghost.png',
-						'PacMan/data/eye-ghost.png'))
+						'data/orange-ghost.png', 
+						'data/eat-ghost.png',
+						'data/eye-ghost.png'))
 					self.levelGhostGroup.add(Ghost(x, y, 1,\
-						'PacMan/data/blue-ghost.png',
-						'PacMan/data/eat-ghost.png',
-						'PacMan/data/eye-ghost.png'))
+						'data/blue-ghost.png',
+						'data/eat-ghost.png',
+						'data/eye-ghost.png'))
 					self.levelGhostGroup.add(Ghost(x, y, 1,\
-						'PacMan/data/pink-ghost.png',
-						'PacMan/data/eat-ghost.png',
-						'PacMan/data/eye-ghost.png'))
+						'data/pink-ghost.png',
+						'data/eat-ghost.png',
+						'data/eye-ghost.png'))
 
 	def update(self):
 		self.pacmanSprite.update()
@@ -328,7 +328,7 @@ blockSize = 25
 pacmanLevel = Level(blockSize)
 
 
-def start():
+def main():
 	pygame.init()
 	screenWidth = 400
 	screenHeight = 375
@@ -343,7 +343,7 @@ def start():
 	pygame.display.flip()
 
 	clock = pygame.time.Clock()
-	pacmanLevel.postInit('PacMan/data/map.txt')
+	pacmanLevel.postInit('data/map.txt')
 	
 	while 1:
 		clock.tick(60)
@@ -372,12 +372,12 @@ def start():
 		
 		if bool(pacmanLevel.pacmanSprite) == True:
 			if pacmanLevel.pacmanSprite.sprites()[0].isWin == True:
-				pacmanLevel.postInit('PacMan/data/win.txt')
+				pacmanLevel.postInit('data/win.txt')
 			elif pacmanLevel.pacmanSprite.sprites()[0].isLose == True:
 				pacmanLevel.pacmanSprite.sprites()[0].kill()
-				pacmanLevel.postInit('PacMan/data/lose.txt')
+				pacmanLevel.postInit('data/lose.txt')
 				
 		pygame.display.flip()
 
 
-if __name__ == '__start__': start()		
+if __name__ == '__main__': main()		
